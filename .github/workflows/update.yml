@@ -24,11 +24,26 @@ jobs:
       - name: 4. 执行节点抓取逻辑
         run: bun run begin # 对应 package.json 中的命令
 
-      - name: 5. 将生成的订阅文件打包推送到仓库
+      - name: 4.5 更新 README 时间戳
+        run: |
+          # 1. 强制将服务器时区设置为北京时间（否则默认是UTC时间，会差8小时）
+          export TZ='Asia/Shanghai'
+          # 2. 获取当前时间并格式化
+          CURRENT_TIME=$(date "+%Y-%m-%d %H:%M:%S")
+          
+          # 3. 使用 sed 命令，自动寻找并删除 README 中包含“更新于”的旧行
+          sed -i '/更新于/d' README.md
+          
+          # 4. 在 README 的最末尾追加写入最新时间
+          echo -e "\n> ⏱️ 节点状态最后自动更新于 $CURRENT_TIME" >> README.md
+
+      - name: 5. 将生成的订阅文件和主页推送到仓库
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add data/
-          # 如果没有抓到新数据，跳过提交，避免报错
-          git commit -m "chore: 自动更新优化节点 [skip ci]" || echo "No changes to commit"
+          
+          # 【关键修改】：这里不仅要 add data文件夹，还要把修改过的 README.md 也加进去！
+          git add data/ README.md
+          
+          git commit -m "chore: 自动更新节点与时间戳 [skip ci]" || echo "No changes to commit"
           git push
